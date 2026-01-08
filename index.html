@@ -3,78 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>도서 전시회 진단 모드</title>
+    <title>교직원 신착도서 </title>
     <style>
-        body { font-family: 'Pretendard', sans-serif; background-color: #fdfaf5; padding: 20px; color: #333; }
-        #debug-log { background: #eee; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 0.8rem; color: #d32f2f; border: 1px solid #ccc; }
-        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .book-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; text-decoration: none; color: inherit; }
-        .book-card img { width: 100%; height: 250px; object-fit: contain; border-radius: 8px; }
-        .title { font-weight: bold; margin-top: 10px; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #fdfaf5; padding: 40px 20px; color: #333; }
+        h1 { text-align: center; margin-bottom: 50px; font-weight: 800; color: #2c3e50; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+        .book-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; transition: 0.3s; text-decoration: none; color: inherit; display: flex; flex-direction: column; padding: 25px; border: 1px solid #f0f0f0; height: 100%; box-sizing: border-box; }
+        .book-card:hover { transform: translateY(-10px); box-shadow: 0 15px 35px rgba(0,0,0,0.12); }
+        .book-card img { width: 100%; height: 350px; object-fit: contain; border-radius: 12px; background: #f9f9f9; margin-bottom: 20px; }
+        .title { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; line-height: 1.4; color: #1a1a1a; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .info { font-size: 0.9rem; color: #666; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .description { font-size: 0.95rem; color: #777; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+        #loading { text-align: center; padding: 50px; font-weight: bold; color: #999; }
     </style>
 </head>
 <body>
 
-    <h1>📚 도서 전시회 (진단 모드)</h1>
-    
-    <div id="debug-log">상태: 데이터 로딩 준비 중...</div>
-
-    <div id="book-gallery" class="gallery"></div>
+    <h1>📚 교직원 신착도서</h1>
+    <div id="loading">도서관 서버에서 최신 데이터를 가져오는 중입니다... (약 10초 소요)</div>
+    <div id="book-gallery" class="gallery" style="display:none;"></div>
 
     <script>
+        // 현재 사용 중인 구글 시트 CSV 주소
         const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvgpFiJL5vGTUdZk3u_cnRyXeZ-Ej5u_FC3HihBMHtHs17ZBSObgQe6aWDH3UFIHpu0oKy1TYhcKPP/pub?gid=0&single=true&output=csv";
 
-        function log(msg) {
-            document.getElementById('debug-log').innerHTML += "<br>▶ " + msg;
+        // CSV의 쉼표 문제를 완벽하게 해결하는 특수 파싱 함수
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"' && line[i + 1] === '"') { current += '"'; i++; }
+                else if (char === '"') { inQuotes = !inQuotes; }
+                else if (char === ',' && !inQuotes) { result.push(current); current = ''; }
+                else { current += char; }
+            }
+            result.push(current);
+            return result;
         }
 
         async function loadBooks() {
-            const gallery = document.getElementById('book-gallery');
             try {
-                log("1. 구글 시트에 연결 시도 중...");
+                // 주소 뒤에 시간을 붙여 캐시(지연)를 최소화합니다.
                 const response = await fetch(sheetCsvUrl + "&t=" + new Date().getTime());
-                
-                if (!response.ok) throw new Error("시트 주소가 잘못되었거나 접근이 거부되었습니다.");
-                
                 const csvText = await response.text();
-                log("2. 데이터를 가져왔습니다. (글자 수: " + csvText.length + ")");
-
-                const rows = csvText.split(/\r?\n/).filter(row => row.trim() !== "");
-                log("3. 분석된 줄 수: " + rows.length + "줄 (제목 줄 포함)");
-
-                if (rows.length <= 1) {
-                    log("⚠️ 오류: 시트에 제목 외에 데이터가 없습니다. 코랩을 돌려 데이터를 채웠는지 확인하세요.");
-                    return;
-                }
-
+                
+                // 줄바꿈으로 나누고 빈 줄 제거
+                const rows = csvText.split(/\r?\n/).filter(row => row.trim().length > 0);
+                const gallery = document.getElementById('book-gallery');
                 gallery.innerHTML = ''; 
 
+                // 첫 줄(헤더)을 제외하고 한 줄씩 분석
                 for (let i = 1; i < rows.length; i++) {
-                    const cols = rows[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    const cols = parseCSVLine(rows[i]);
                     
+                    // 제목(A)과 이미지(E)가 있는지 확인
                     if (cols.length >= 5) {
-                        const title = cols[0].replace(/"/g, "").trim();
-                        const img = cols[4] ? cols[4].replace(/"/g, "").trim() : "";
-                        const link = cols[5] ? cols[5].replace(/"/g, "").trim() : "#";
+                        const title = cols[0].replace(/<b>/g, '').replace(/<\/b>/g, '').replace(/"/g, '').trim();
+                        const author = (cols[1] || '작가 정보 없음').replace(/"/g, '').trim();
+                        const pub = (cols[2] || '출판사').replace(/"/g, '').trim();
+                        const desc = (cols[3] || '설명이 준비 중입니다.').replace(/<b>/g, '').replace(/<\/b>/g, '').replace(/"/g, '').trim();
+                        const img = cols[4].trim();
+                        const link = cols[5] ? cols[5].trim() : '#';
 
                         if (img.startsWith('http')) {
                             gallery.innerHTML += `
-                                <div class="book-card">
-                                    <img src="${img}" alt="${title}">
+                                <a href="${link}" target="_blank" class="book-card">
+                                    <img src="${img}" alt="${title}" onerror="this.src='https://via.placeholder.com/300x400?text=이미지+준비중'">
                                     <div class="title">${title}</div>
-                                </div>`;
-                        } else {
-                            log("⚠️ " + i + "번째 줄: 이미지 주소가 없어서 표시하지 않음 (" + title + ")");
+                                    <div class="info">${author} | ${pub}</div>
+                                    <div class="description">${desc}</div>
+                                </a>`;
                         }
-                    } else {
-                        log("⚠️ " + i + "번째 줄: 데이터 칸이 부족함 (현재 " + cols.length + "개)");
                     }
                 }
-
-                log("✅ 모든 분석이 완료되었습니다.");
-
-            } catch (e) { 
-                log("❌ 에러 발생: " + e.message);
+                document.getElementById('loading').style.display = 'none';
+                gallery.style.display = 'grid';
+            } catch (e) {
+                console.error(e);
+                document.getElementById('loading').innerText = "데이터를 불러오지 못했습니다. 5분 뒤 다시 시도해 주세요.";
             }
         }
         loadBooks();
