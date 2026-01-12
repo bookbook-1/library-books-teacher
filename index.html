@@ -8,9 +8,43 @@
         :root { --primary: #2c3e50; --bg: #fdfaf5; --accent: #e67e22; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); padding: 40px 20px; color: #333; margin: 0; }
         
-        h1 { text-align: center; margin-bottom: 30px; font-weight: 800; color: var(--primary); letter-spacing: -1px; }
+        h1 { text-align: center; margin-bottom: 20px; font-weight: 800; color: var(--primary); letter-spacing: -1px; }
 
-        /* 카테고리 필터 버튼 스타일 */
+        /* --- 1. 대시보드(DNA & 통계) 스타일 --- */
+        .dashboard-container {
+            max-width: 800px; margin: 0 auto 40px; background: white; 
+            padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            text-align: center; border: 1px solid #f0f0f0;
+        }
+        
+        .dashboard-title { font-size: 0.95rem; color: #666; margin-bottom: 15px; font-weight: 600; }
+        .dashboard-title strong { color: var(--primary); font-size: 1.2rem; }
+
+        /* DNA 바 (Progress Bar) */
+        .dna-bar-wrapper {
+            width: 100%; height: 24px; background: #f0f0f0; border-radius: 12px; 
+            overflow: hidden; display: flex; margin-bottom: 15px;
+        }
+        .dna-segment {
+            height: 100%; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+        }
+        .dna-segment:hover { opacity: 0.9; }
+        
+        /* 툴팁 (마우스 올리면 권수 표시) */
+        .dna-segment:hover::after {
+            content: attr(data-label); position: absolute; top: -35px; left: 50%; 
+            transform: translateX(-50%); background: #333; color: white; 
+            padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap;
+            pointer-events: none; z-index: 100;
+        }
+
+        /* 통계 범례 (Legend) */
+        .stat-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; font-size: 0.85rem; color: #555; }
+        .stat-item { display: flex; align-items: center; gap: 5px; }
+        .stat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+        /* --- 2. 카테고리 필터 버튼 --- */
         .filter-container { text-align: center; margin-bottom: 50px; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
         .filter-btn {
             background: white; border: 1px solid #ddd; padding: 8px 16px; 
@@ -22,6 +56,7 @@
             transform: translateY(-2px); box-shadow: 0 4px 10px rgba(44, 62, 80, 0.2);
         }
 
+        /* --- 3. 그리드 갤러리 --- */
         .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
         
         .book-card { 
@@ -32,13 +67,11 @@
         }
         .book-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
         
-        /* 청구기호 표시 스타일 */
         .call-number {
             font-size: 0.8rem; color: var(--accent); font-weight: 700; margin-bottom: 5px;
             display: inline-block; background: #fff5e6; padding: 2px 8px; border-radius: 4px;
         }
 
-        /* 배지 스타일 */
         .badge {
             position: absolute; top: 20px; right: 20px; padding: 6px 14px; 
             border-radius: 30px; font-size: 0.75rem; font-weight: 800; color: white; 
@@ -59,16 +92,30 @@
 
     <h1>📚 교직원 신착도서</h1>
     
+    <div id="dashboard" class="dashboard-container" style="display: none;">
+        <div class="dashboard-title">
+            이번 달 총 <strong id="total-count">0</strong>권의 신착도서가 입고되었습니다.
+        </div>
+        <div id="dna-bar" class="dna-bar-wrapper"></div>
+        <div id="stat-legend" class="stat-legend"></div>
+    </div>
+
     <div id="filter-buttons" class="filter-container"></div>
 
-    <div id="status">청구기호를 분석하여 책을 정리 중입니다...</div>
+    <div id="status">도서 데이터를 분석 중입니다...</div>
     <div id="book-gallery" class="gallery"></div>
 
     <script>
-        // J열(카테고리)이 없어도 I열(청구기호)만 있으면 됩니다. 범위는 그대로 A:J 유지 (혹시 데이터가 있을 수 있으니)
         const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvgpFiJL5vGTUdZk3u_cnRyXeZ-Ej5u_FC3HihBMHtHs17ZBSObgQe6aWDH3UFIHpu0oKy1TYhcKPP/pub?gid=0&single=true&output=csv&range=A:J";
 
         let allBooks = []; 
+        
+        // 카테고리별 색상 팔레트 (예쁜 파스텔톤 지정)
+        const categoryColors = {
+            '총류': '#a8e6cf', '철학': '#dcedc1', '종교': '#ffd3b6',
+            '사회과학': '#ffaaa5', '자연과학': '#ff8b94', '기술과학': '#6c5ce7',
+            '예술': '#a29bfe', '언어': '#74b9ff', '문학': '#0984e3', '역사': '#fdcb6e', '기타': '#b2bec3'
+        };
 
         function parseCSV(text) {
             const rows = []; let row = []; let col = ''; let inQuotes = false;
@@ -84,30 +131,13 @@
             return rows;
         }
 
-        // ★핵심 기능: 청구기호 분석 함수
         function getCategoryFromCallNo(callNo) {
             if (!callNo) return '기타';
-            
-            // 정규식: 숫자 3자리 패턴을 찾습니다. (예: 813.6 -> 813 추출)
             const match = callNo.match(/(\d{3})/);
             if (!match) return '기타';
-
             const num = match[1]; 
-            const hundreds = num.charAt(0); // 맨 앞자리 숫자 추출
-
-            const map = {
-                '0': '총류',
-                '1': '철학',
-                '2': '종교',
-                '3': '사회과학',
-                '4': '자연과학',
-                '5': '기술과학',
-                '6': '예술',
-                '7': '언어',
-                '8': '문학',
-                '9': '역사'
-            };
-
+            const hundreds = num.charAt(0);
+            const map = { '0': '총류', '1': '철학', '2': '종교', '3': '사회과학', '4': '자연과학', '5': '기술과학', '6': '예술', '7': '언어', '8': '문학', '9': '역사' };
             return map[hundreds] || '기타';
         }
 
@@ -121,11 +151,8 @@
                 for (let i = 1; i < data.length; i++) {
                     const cols = data[i];
                     if (cols.length >= 6) {
-                        const callNo = cols[8] ? cols[8].trim() : ''; // I열: 청구기호
-
-                        // ★여기서 카테고리를 자동으로 결정합니다!
+                        const callNo = cols[8] ? cols[8].trim() : ''; 
                         const autoCategory = getCategoryFromCallNo(callNo);
-
                         allBooks.push({
                             title: cols[1].trim(),
                             author: cols[2] || '',
@@ -135,23 +162,73 @@
                             link: cols[6] ? cols[6].trim() : '#',
                             badge: cols[7] ? cols[7].trim() : '',
                             callNo: callNo,
-                            category: autoCategory // 자동 분류된 값 사용
+                            category: autoCategory
                         });
                     }
                 }
 
-                // 청구기호 순 정렬
                 allBooks.sort((a, b) => a.callNo.localeCompare(b.callNo));
 
-                // 필터 버튼 생성 및 렌더링
+                // ★ 대시보드 그리기 (DNA 분석)
+                renderDashboard();
+                
                 createFilterButtons();
                 renderBooks('전체');
 
                 document.getElementById('status').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block'; // 로딩 끝나면 대시보드 보이기
 
             } catch (e) {
                 document.getElementById('status').innerText = "오류 발생: " + e.message;
             }
+        }
+
+        // ★ 도서 DNA 대시보드 렌더링 함수
+        function renderDashboard() {
+            const total = allBooks.length;
+            document.getElementById('total-count').innerText = total;
+
+            // 카테고리별 개수 세기
+            const stats = {};
+            allBooks.forEach(book => {
+                stats[book.category] = (stats[book.category] || 0) + 1;
+            });
+
+            // 순서대로 정렬 (총류 -> 역사)
+            const order = ['총류', '철학', '종교', '사회과학', '자연과학', '기술과학', '예술', '언어', '문학', '역사', '기타'];
+            
+            const barContainer = document.getElementById('dna-bar');
+            const legendContainer = document.getElementById('stat-legend');
+            
+            barContainer.innerHTML = '';
+            legendContainer.innerHTML = '';
+
+            order.forEach(cat => {
+                const count = stats[cat];
+                if (count > 0) {
+                    const percentage = (count / total) * 100;
+                    const color = categoryColors[cat] || '#ccc';
+
+                    // 1. DNA Bar 세그먼트 생성
+                    const segment = document.createElement('div');
+                    segment.className = 'dna-segment';
+                    segment.style.width = '0%'; // 애니메이션 시작값
+                    segment.style.backgroundColor = color;
+                    segment.setAttribute('data-label', `${cat}: ${count}권 (${percentage.toFixed(1)}%)`); // 툴팁 내용
+                    
+                    // 애니메이션: 약간의 딜레이 후 너비 설정
+                    setTimeout(() => { segment.style.width = `${percentage}%`; }, 100);
+                    barContainer.appendChild(segment);
+
+                    // 2. 하단 범례 생성
+                    legendContainer.innerHTML += `
+                        <div class="stat-item">
+                            <span class="stat-dot" style="background:${color}"></span>
+                            ${cat} ${count}
+                        </div>
+                    `;
+                }
+            });
         }
 
         function renderBooks(filterCategory) {
@@ -160,7 +237,6 @@
 
             allBooks.forEach(book => {
                 if (filterCategory === '전체' || book.category === filterCategory) {
-                    
                     let badgeHtml = '';
                     if (book.badge === '신규') badgeHtml = '<div class="badge badge-new">NEW</div>';
                     else if (book.badge === '추천') badgeHtml = '<div class="badge badge-pick">PICK</div>';
@@ -184,13 +260,8 @@
         }
 
         function createFilterButtons() {
-            // 카테고리 순서 고정 (0~9 순서대로 버튼이 나오게 정렬)
             const order = ['전체', '총류', '철학', '종교', '사회과학', '자연과학', '기술과학', '예술', '언어', '문학', '역사', '기타'];
-            
-            // 현재 책들에 존재하는 카테고리만 뽑기
             const existCats = [...new Set(allBooks.map(b => b.category))];
-            
-            // 존재하는 것들만 순서대로 정렬
             const finalCats = order.filter(c => c === '전체' || existCats.includes(c));
 
             const btnContainer = document.getElementById('filter-buttons');
