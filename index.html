@@ -11,7 +11,7 @@
         
         h1 { text-align: center; margin-bottom: 20px; font-weight: 800; color: var(--primary); letter-spacing: -1px; }
 
-        /* 대시보드 스타일 */
+        /* 대시보드 */
         .dashboard-container {
             max-width: 800px; margin: 0 auto 30px; background: white; 
             padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
@@ -20,20 +20,13 @@
         .dashboard-title { font-size: 0.95rem; color: #666; margin-bottom: 15px; font-weight: 600; }
         .dashboard-title strong { color: var(--primary); font-size: 1.2rem; }
 
-        .dna-bar-wrapper {
-            width: 100%; height: 24px; background: #f0f0f0; border-radius: 12px; 
-            overflow: hidden; display: flex; margin-bottom: 15px;
-        }
-        .dna-segment {
-            height: 100%; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
-            position: relative;
-        }
+        .dna-bar-wrapper { width: 100%; height: 24px; background: #f0f0f0; border-radius: 12px; overflow: hidden; display: flex; margin-bottom: 15px; }
+        .dna-segment { height: 100%; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1); position: relative; }
         .dna-segment:hover { opacity: 0.9; }
         .dna-segment:hover::after {
             content: attr(data-label); position: absolute; top: -35px; left: 50%; 
             transform: translateX(-50%); background: #333; color: white; 
-            padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap;
-            pointer-events: none; z-index: 100;
+            padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; pointer-events: none; z-index: 100;
         }
         .stat-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; font-size: 0.85rem; color: #555; }
         .stat-item { display: flex; align-items: center; gap: 5px; }
@@ -55,11 +48,9 @@
             border-radius: 20px; cursor: pointer; font-weight: 600; color: #555;
             transition: all 0.2s; font-size: 0.9rem;
         }
-        .filter-btn:hover, .filter-btn.active {
-            background: var(--primary); color: white; border-color: var(--primary);
-        }
+        .filter-btn:hover, .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* 갤러리 스타일 */
+        /* 갤러리 */
         .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
         .book-card { 
             background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); 
@@ -68,55 +59,66 @@
             position: relative; height: 100%; box-sizing: border-box;
         }
         .book-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
-        .call-number {
-            font-size: 0.8rem; color: var(--accent); font-weight: 700; margin-bottom: 5px;
-            display: inline-block; background: #fff5e6; padding: 2px 8px; border-radius: 4px;
-        }
-        .badge {
-            position: absolute; top: 20px; right: 20px; padding: 6px 14px; 
-            border-radius: 30px; font-size: 0.75rem; font-weight: 800; color: white; 
-            z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .badge-신규 { background: #2c3e50; }
-        .badge-추천 { background: #d4a373; }
-        .badge-인기 { background: #e63946; }
-
+        .call-number { font-size: 0.8rem; color: var(--accent); font-weight: 700; margin-bottom: 5px; display: inline-block; background: #fff5e6; padding: 2px 8px; border-radius: 4px; }
+        .badge { position: absolute; top: 20px; right: 20px; padding: 6px 14px; border-radius: 30px; font-size: 0.75rem; font-weight: 800; color: white; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .badge-신규 { background: #2c3e50; } .badge-추천 { background: #d4a373; } .badge-인기 { background: #e63946; }
         .book-card img { width: 100%; height: 350px; object-fit: contain; border-radius: 12px; background: #f9f9f9; margin-bottom: 20px; }
         .title { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; line-height: 1.4; color: #1a1a1a; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 3.4rem; }
         .info { font-size: 0.9rem; color: #666; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         .description { font-size: 0.95rem; color: #777; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* 팝업 모달 & 룰렛 효과 */
+        /* 파칭코 팝업 모달 */
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            background-color: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
             animation: fadeIn 0.3s;
         }
         .modal-content {
-            background-color: #fefefe; margin: 5% auto; padding: 40px; border-radius: 20px;
+            background-color: #fefefe; margin: 3% auto; padding: 40px; border-radius: 30px;
             width: 90%; max-width: 450px; text-align: center; position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
             animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 4px solid white;
         }
-        .close-btn {
-            position: absolute; top: 15px; right: 20px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        
+        /* 룰렛 번쩍임 효과 */
+        .modal-content.spinning { animation: rainbowBorder 0.5s linear infinite; }
+        @keyframes rainbowBorder {
+            0% { border-color: #ff0000; box-shadow: 0 0 20px #ff0000; }
+            20% { border-color: #ffff00; box-shadow: 0 0 20px #ffff00; }
+            40% { border-color: #00ff00; box-shadow: 0 0 20px #00ff00; }
+            60% { border-color: #00ffff; box-shadow: 0 0 20px #00ffff; }
+            80% { border-color: #0000ff; box-shadow: 0 0 20px #0000ff; }
+            100% { border-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
         }
+
+        .close-btn { position: absolute; top: 15px; right: 20px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; transition: 0.2s; z-index: 20; }
         .close-btn:hover { color: black; }
         .modal-title { font-size: 1.5rem; color: #6c5ce7; margin-bottom: 20px; font-weight: 800; }
-        .modal-img { width: 60%; max-height: 300px; object-fit: contain; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
         
-        /* 펑! 하고 튀어나오는 애니메이션 */
-        .pop-anim { animation: popScale 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        /* 슬롯머신 창 */
+        .slot-window {
+            width: 60%; height: 300px; margin: 0 auto 20px; 
+            overflow: hidden; border-radius: 10px; position: relative;
+            background: #f0f0f0; box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+        }
+        .modal-img { width: 100%; height: 100%; object-fit: contain; position: relative; top: 0; }
+
+        /* 릴 애니메이션 */
+        .slot-spin { animation: slotBlur 0.1s linear infinite; filter: blur(8px); transform: scale(0.9); }
+        @keyframes slotBlur {
+            0% { transform: translateY(-50%) scale(0.9); opacity: 0.5; }
+            100% { transform: translateY(50%) scale(0.9); opacity: 0.5; }
+        }
+
+        /* 펑 효과 */
+        .pop-anim { animation: popScale 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); filter: blur(0); }
         @keyframes popScale { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
         @keyframes slideUp { from {transform: translateY(50px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
 
-        /* 상태 메시지 */
-        #status { 
-            text-align: center; color: #666; padding: 50px; font-size: 1.1rem; 
-            border: 2px dashed #ddd; margin: 20px auto; max-width: 600px; border-radius: 10px;
-        }
+        #status { text-align: center; color: #666; padding: 50px; font-size: 1.1rem; border: 2px dashed #ddd; margin: 20px auto; max-width: 600px; border-radius: 10px; }
         .error-box { color: #d63031; background: #ffeaea; border-color: #d63031; font-weight: bold; }
     </style>
 </head>
@@ -124,7 +126,10 @@
 
     <h1>📚 교직원 신착도서</h1>
     
-    <div id="status">데이터를 불러오는 중입니다...</div>
+    <div id="status">
+        데이터를 불러오는 중입니다...<br>
+        <span style="font-size:0.8rem; color:#999;">(잠시만 기다려주세요)</span>
+    </div>
 
     <div id="dashboard" class="dashboard-container">
         <div class="dashboard-title">
@@ -136,7 +141,7 @@
 
     <div class="controls-container">
         <button class="random-btn" onclick="openRandomModal()">
-            🎲 오늘의 운세: 책 추천받기
+            🎰 오늘의 운세: 책 추천받기
         </button>
         <br>
         <div id="filter-buttons" class="filter-container"></div>
@@ -145,10 +150,12 @@
     <div id="book-gallery" class="gallery"></div>
 
     <div id="randomModal" class="modal">
-        <div class="modal-content">
+        <div id="modal-box" class="modal-content">
             <span class="close-btn" onclick="closeRandomModal()">&times;</span>
-            <div class="modal-title">🍀 오늘의 행운 도서</div>
-            <img id="modal-img" class="modal-img" src="" alt="랜덤 책">
+            <div class="modal-title" id="modal-head-text">🍀 오늘의 행운 도서</div>
+            <div class="slot-window">
+                <img id="modal-img" class="modal-img" src="" alt="랜덤 책">
+            </div>
             <h2 id="modal-title" style="font-size:1.2rem; margin-bottom:10px;"></h2>
             <p id="modal-author" style="color:#666; margin-bottom:20px;"></p>
             <a id="modal-link" href="#" target="_blank" class="random-btn" style="text-decoration:none; font-size:0.9rem;">
@@ -169,10 +176,20 @@
         });
 
         let allBooks = []; 
+        
+        // ★ 수정된 색상 코드 적용 ★
         const categoryColors = {
-            '총류': '#27ae60', '철학': '#FF0000', '종교': '#7f8c8d',
-            '사회과학': '#FFA500', '자연과학': '#795548', '기술과학': '#00a8ff',
-            '예술': '#f1c40f', '언어': '#badc58', '문학': '#120A8F', '역사': '#8e44ad', '기타': '#bdc3c7'
+            '총류': '#27ae60',     // Green
+            '철학': '#FF0000',     // Red (변경됨)
+            '종교': '#7f8c8d',     // Grey
+            '사회과학': '#FFA500', // Orange (변경됨)
+            '자연과학': '#795548', // Brown
+            '기술과학': '#00a8ff', // Light Blue
+            '예술': '#f1c40f',     // Yellow
+            '언어': '#badc58',     // Light Green
+            '문학': '#120A8F',     // Dark Blue (변경됨)
+            '역사': '#8e44ad',     // Purple
+            '기타': '#bdc3c7'      // Light Grey
         };
 
         function parseCSV(text) {
@@ -269,57 +286,54 @@
             });
         }
 
-        // ★ 룰렛 효과가 적용된 랜덤 모달 함수
         let rouletteInterval;
         
         function openRandomModal() {
             if (allBooks.length === 0) return;
-            
             const modal = document.getElementById('randomModal');
+            const modalBox = document.getElementById('modal-box');
             const imgEl = document.getElementById('modal-img');
+            const headEl = document.getElementById('modal-head-text');
             const titleEl = document.getElementById('modal-title');
             const authorEl = document.getElementById('modal-author');
             const linkEl = document.getElementById('modal-link');
 
-            // 1. 초기 상태 설정
             modal.style.display = 'block';
-            linkEl.style.display = 'none'; // 버튼 숨김 (돌아가는 동안)
-            titleEl.innerText = "두구두구두구...";
-            authorEl.innerText = "행운의 책을 고르는 중입니다!";
-            imgEl.classList.remove('pop-anim'); // 애니메이션 리셋
+            modalBox.classList.add('spinning'); 
+            imgEl.classList.add('slot-spin');
+            imgEl.classList.remove('pop-anim'); 
+            
+            linkEl.style.display = 'none';
+            headEl.innerText = "🎰 두구두구... 🎰";
+            titleEl.innerText = "운명의 책을 찾고 있습니다...";
+            authorEl.innerText = "잠시만 기다려주세요!";
 
-            // 2. 룰렛 돌리기 (0.1초마다 이미지 변경)
             rouletteInterval = setInterval(() => {
                 const randomTemp = allBooks[Math.floor(Math.random() * allBooks.length)];
                 imgEl.src = randomTemp.img;
-            }, 100);
+            }, 50); 
 
-            // 3. 2초 뒤에 멈추고 결과 공개
             setTimeout(() => {
-                clearInterval(rouletteInterval); // 룰렛 멈춤
-                
-                // 최종 당첨 책 선정
+                clearInterval(rouletteInterval);
                 const finalBook = allBooks[Math.floor(Math.random() * allBooks.length)];
-                
-                // 정보 업데이트
+                modalBox.classList.remove('spinning'); 
+                imgEl.classList.remove('slot-spin');   
                 imgEl.src = finalBook.img;
+                headEl.innerText = "🎉 오늘의 행운 도서! 🎉";
                 titleEl.innerText = finalBook.title;
                 authorEl.innerText = finalBook.author + ' | ' + finalBook.pub;
                 linkEl.href = finalBook.link;
-                
-                // 짜잔! 효과
                 linkEl.style.display = 'inline-block';
-                
-                // 팝! 하고 튀어나오는 애니메이션 다시 실행
-                void imgEl.offsetWidth; // 리플로우 트리거 (애니메이션 재시작용 꼼수)
+                void imgEl.offsetWidth; 
                 imgEl.classList.add('pop-anim');
-
-            }, 2000); // 2000ms = 2초
+            }, 2500);
         }
 
         function closeRandomModal() {
             document.getElementById('randomModal').style.display = 'none';
-            clearInterval(rouletteInterval); // 혹시 닫아도 돌아가고 있으면 멈춤
+            clearInterval(rouletteInterval);
+            document.getElementById('modal-box').classList.remove('spinning');
+            document.getElementById('modal-img').classList.remove('slot-spin');
         }
 
         window.onclick = function(event) {
