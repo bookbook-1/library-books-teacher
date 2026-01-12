@@ -8,8 +8,24 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root { --primary: #2c3e50; --bg: #fdfaf5; --accent: #e67e22; }
-        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); padding: 40px 20px; color: #333; margin: 0; }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); padding: 0; color: #333; margin: 0; }
         
+        /* ★ 공지사항 롤링 배너 스타일 */
+        .notice-bar {
+            background: #2c3e50; color: white; width: 100%; height: 40px;
+            overflow: hidden; position: relative; align-items: center;
+            display: none; /* ★ 기본적으로 숨김 (데이터 있으면 JS가 켬) */
+        }
+        .notice-track {
+            white-space: nowrap; position: absolute; will-change: transform;
+            animation: ticker 20s linear infinite; font-size: 0.9rem; font-weight: 500;
+        }
+        @keyframes ticker {
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .main-content { padding: 40px 20px; }
         h1 { text-align: center; margin-bottom: 20px; font-weight: 800; color: var(--primary); letter-spacing: -1px; }
 
         /* 대시보드 */
@@ -33,8 +49,18 @@
         .stat-item { display: flex; align-items: center; gap: 5px; }
         .stat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
-        /* 컨트롤 패널 */
-        .controls-container { text-align: center; margin-bottom: 40px; }
+        /* 컨트롤 패널 & 검색창 */
+        .controls-container { text-align: center; margin-bottom: 40px; max-width: 1200px; margin-left: auto; margin-right: auto; }
+        
+        /* 실시간 검색창 스타일 */
+        .search-wrapper { margin-bottom: 20px; position: relative; max-width: 500px; margin: 0 auto 20px; }
+        .search-input {
+            width: 100%; padding: 12px 20px; font-size: 1rem; border-radius: 30px;
+            border: 2px solid #ddd; outline: none; transition: 0.3s; box-sizing: border-box;
+            background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23999' class='bi bi-search' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'%3F%3E%3C/svg%3E") no-repeat 95% center;
+        }
+        .search-input:focus { border-color: #6c5ce7; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.2); }
+
         .random-btn {
             background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; border: none;
             padding: 10px 24px; border-radius: 30px; font-weight: 700; cursor: pointer;
@@ -66,47 +92,34 @@
         .book-card img { width: 100%; height: 350px; object-fit: contain; border-radius: 12px; background: #f9f9f9; margin-bottom: 20px; }
         .title { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; line-height: 1.4; color: #1a1a1a; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 3.4rem; }
         .info { font-size: 0.9rem; color: #666; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .description { font-size: 0.95rem; color: #777; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .description { font-size: 0.95rem; color: #777; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: auto; }
 
         /* 파칭코 팝업 모달 */
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-            animation: fadeIn 0.3s;
+            background-color: rgba(0,0,0,0.7); backdrop-filter: blur(8px); animation: fadeIn 0.3s;
         }
         .modal-content {
             background-color: #fefefe; margin: 3% auto; padding: 40px; border-radius: 30px;
             width: 90%; max-width: 450px; text-align: center; position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4); animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             border: 4px solid white;
         }
-        
-        /* ★ 테두리 번쩍임 효과 제거됨 ★ */
-
         .close-btn { position: absolute; top: 15px; right: 20px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; transition: 0.2s; z-index: 20; }
         .close-btn:hover { color: black; }
         .modal-title { font-size: 1.5rem; color: #6c5ce7; margin-bottom: 20px; font-weight: 800; }
-        
-        /* 슬롯머신 창 */
         .slot-window {
-            width: 60%; height: 300px; margin: 0 auto 20px; 
-            overflow: hidden; border-radius: 10px; position: relative;
+            width: 60%; height: 300px; margin: 0 auto 20px; overflow: hidden; border-radius: 10px; position: relative;
             background: #f0f0f0; box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
         }
         .modal-img { width: 100%; height: 100%; object-fit: contain; position: relative; top: 0; }
-
-        /* 릴 애니메이션 */
         .slot-spin { animation: slotBlur 0.1s linear infinite; filter: blur(8px); transform: scale(0.9); }
         @keyframes slotBlur {
             0% { transform: translateY(-50%) scale(0.9); opacity: 0.5; }
             100% { transform: translateY(50%) scale(0.9); opacity: 0.5; }
         }
-
-        /* 펑 효과 */
         .pop-anim { animation: popScale 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); filter: blur(0); }
         @keyframes popScale { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
         @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
         @keyframes slideUp { from {transform: translateY(50px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
 
@@ -116,30 +129,41 @@
 </head>
 <body>
 
-    <h1>📚 교직원 신착도서</h1>
-    
-    <div id="status">
-        데이터를 불러오는 중입니다...<br>
-        <span style="font-size:0.8rem; color:#999;">(잠시만 기다려주세요)</span>
+    <div id="notice-bar" class="notice-bar">
+        <div class="notice-track" id="notice-text"></div>
     </div>
 
-    <div id="dashboard" class="dashboard-container">
-        <div class="dashboard-title">
-            이번 달 총 <strong id="total-count">0</strong>권의 신착도서가 입고되었습니다.
+    <div class="main-content">
+        <h1>📚 교직원 신착도서</h1>
+        
+        <div id="status">
+            데이터를 불러오는 중입니다...<br>
+            <span style="font-size:0.8rem; color:#999;">(잠시만 기다려주세요)</span>
         </div>
-        <div id="dna-bar" class="dna-bar-wrapper"></div>
-        <div id="stat-legend" class="stat-legend"></div>
-    </div>
 
-    <div class="controls-container">
-        <button class="random-btn" onclick="openRandomModal()">
-            🍀 오늘의 운세: 책 추천받기
-        </button>
-        <br>
-        <div id="filter-buttons" class="filter-container"></div>
-    </div>
+        <div id="dashboard" class="dashboard-container">
+            <div class="dashboard-title">
+                이번 달 총 <strong id="total-count">0</strong>권의 신착도서가 입고되었습니다.
+            </div>
+            <div id="dna-bar" class="dna-bar-wrapper"></div>
+            <div id="stat-legend" class="stat-legend"></div>
+        </div>
 
-    <div id="book-gallery" class="gallery"></div>
+        <div class="controls-container">
+            <button class="random-btn" onclick="openRandomModal()">
+                🍀 오늘의 운세: 책 추천받기
+            </button>
+            <br>
+
+            <div class="search-wrapper">
+                <input type="text" id="searchInput" class="search-input" placeholder="도서명, 작가, 출판사로 검색해보세요..." onkeyup="filterBySearch()">
+            </div>
+
+            <div id="filter-buttons" class="filter-container"></div>
+        </div>
+
+        <div id="book-gallery" class="gallery"></div>
+    </div>
 
     <div id="randomModal" class="modal">
         <div id="modal-box" class="modal-content">
@@ -157,9 +181,8 @@
     </div>
 
     <script>
-        // ▼▼▼ 여기에 본인의 구글 시트 주소를 넣으세요 ▼▼▼
+        // 사용자 구글 시트 주소
         const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvgpFiJL5vGTUdZk3u_cnRyXeZ-Ej5u_FC3HihBMHtHs17ZBSObgQe6aWDH3UFIHpu0oKy1TYhcKPP/pub?gid=0&single=true&output=csv"; 
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
         window.addEventListener('error', function(e) {
             const statusDiv = document.getElementById('status');
@@ -168,6 +191,8 @@
         });
 
         let allBooks = []; 
+        let currentCategory = '전체'; 
+
         const categoryColors = {
             '총류': '#27ae60', '철학': '#FF0000', '종교': '#7f8c8d',
             '사회과학': '#FFA500', '자연과학': '#795548', '기술과학': '#00a8ff',
@@ -207,6 +232,27 @@
                 if (csvText.trim().startsWith("<!DOCTYPE") || csvText.includes("<html")) throw new Error("CSV 형식이 아닙니다.");
 
                 const data = parseCSV(csvText);
+
+                // ★ 공지사항 로직 (J2 셀 확인)
+                // data[1]은 2번째 행(Row 2), data[1][9]는 10번째 열(Column J)
+                const noticeBar = document.getElementById('notice-bar');
+                const noticeText = document.getElementById('notice-text');
+                
+                let showNotice = false;
+                if (data.length > 1 && data[1].length >= 10) {
+                    const j2Content = data[1][9]; // J2 셀
+                    if (j2Content && j2Content.trim() !== "") {
+                        noticeText.innerText = j2Content.trim();
+                        showNotice = true;
+                    }
+                }
+
+                if (showNotice) {
+                    noticeBar.style.display = 'flex'; // 내용 있으면 보이기
+                } else {
+                    noticeBar.style.display = 'none'; // 내용 없으면 숨기기
+                }
+
                 allBooks = [];
                 for (let i = 1; i < data.length; i++) {
                     const cols = data[i];
@@ -268,90 +314,59 @@
             });
         }
 
-        let rouletteInterval;
-        
-        function openRandomModal() {
-            if (allBooks.length === 0) return;
-            const modal = document.getElementById('randomModal');
-            const modalBox = document.getElementById('modal-box');
-            const imgEl = document.getElementById('modal-img');
-            const headEl = document.getElementById('modal-head-text');
-            const titleEl = document.getElementById('modal-title');
-            const authorEl = document.getElementById('modal-author');
-            const linkEl = document.getElementById('modal-link');
-
-            modal.style.display = 'block';
-            // modalBox.classList.add('spinning'); // ★ 테두리 반짝임 제거 ★
-            imgEl.classList.add('slot-spin');
-            imgEl.classList.remove('pop-anim'); 
-            
-            linkEl.style.display = 'none';
-            headEl.innerText = " 두구두구... ";
-            titleEl.innerText = "운명의 책을 찾고 있습니다...";
-            authorEl.innerText = "잠시만 기다려주세요!";
-
-            rouletteInterval = setInterval(() => {
-                const randomTemp = allBooks[Math.floor(Math.random() * allBooks.length)];
-                imgEl.src = randomTemp.img;
-            }, 50); 
-
-            setTimeout(() => {
-                clearInterval(rouletteInterval);
-                const finalBook = allBooks[Math.floor(Math.random() * allBooks.length)];
-                // modalBox.classList.remove('spinning'); // ★ 테두리 반짝임 제거 ★
-                imgEl.classList.remove('slot-spin');   
-                imgEl.src = finalBook.img;
-                headEl.innerText = "🎉 오늘의 행운 도서! 🎉";
-                titleEl.innerText = finalBook.title;
-                authorEl.innerText = finalBook.author + ' | ' + finalBook.pub;
-                linkEl.href = finalBook.link;
-                linkEl.style.display = 'inline-block';
-                void imgEl.offsetWidth; 
-                imgEl.classList.add('pop-anim');
-
-                // ★ 꽃가루 효과 발사! ★
-                confetti({
-                    particleCount: 150,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    zIndex: 2000 // 모달 위로 오게 설정
+        function filterBySearch() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            if(query.length > 0) {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                renderBooks('SEARCH_MODE', query); 
+            } else {
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    if(b.innerText === currentCategory) b.classList.add('active');
                 });
-
-            }, 2500);
+                renderBooks(currentCategory);
+            }
         }
 
-        function closeRandomModal() {
-            document.getElementById('randomModal').style.display = 'none';
-            clearInterval(rouletteInterval);
-            // document.getElementById('modal-box').classList.remove('spinning'); // 제거됨
-            document.getElementById('modal-img').classList.remove('slot-spin');
-        }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('randomModal')) closeRandomModal();
-        }
-
-        function renderBooks(filterCategory) {
+        function renderBooks(filterCategory, searchQuery = '') {
             const gallery = document.getElementById('book-gallery');
             gallery.innerHTML = ''; 
-            allBooks.forEach(book => {
-                if (filterCategory === '전체' || book.category === filterCategory) {
-                    let badgeHtml = '';
-                    if (book.badge === '신규') badgeHtml = '<div class="badge badge-신규">NEW</div>';
-                    else if (book.badge === '추천') badgeHtml = '<div class="badge badge-추천">PICK</div>';
-                    else if (book.badge === '인기') badgeHtml = '<div class="badge badge-인기">HOT</div>';
-                    let callNoHtml = book.callNo ? `<div class="call-number">${book.callNo}</div>` : '';
-                    if (book.img.startsWith('http')) {
-                        gallery.innerHTML += `
-                            <a href="${book.link}" target="_blank" class="book-card">
-                                ${badgeHtml}
-                                <img src="${book.img}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'">
-                                ${callNoHtml}
-                                <div class="title">${book.title}</div>
-                                <div class="info">${book.author} | ${book.pub}</div>
-                                <div class="description">${book.desc}</div>
-                            </a>`;
-                    }
+
+            let filteredBooks = allBooks;
+
+            if (filterCategory === 'SEARCH_MODE') {
+                filteredBooks = allBooks.filter(book => 
+                    book.title.toLowerCase().includes(searchQuery) || 
+                    book.author.toLowerCase().includes(searchQuery) ||
+                    book.pub.toLowerCase().includes(searchQuery)
+                );
+            } else {
+                if (filterCategory !== '전체') {
+                    filteredBooks = allBooks.filter(book => book.category === filterCategory);
+                }
+            }
+
+            if (filteredBooks.length === 0) {
+                gallery.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#999; padding:50px;">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            filteredBooks.forEach(book => {
+                let badgeHtml = '';
+                if (book.badge === '신규') badgeHtml = '<div class="badge badge-신규">NEW</div>';
+                else if (book.badge === '추천') badgeHtml = '<div class="badge badge-추천">PICK</div>';
+                else if (book.badge === '인기') badgeHtml = '<div class="badge badge-인기">HOT</div>';
+                let callNoHtml = book.callNo ? `<div class="call-number">${book.callNo}</div>` : '';
+
+                if (book.img.startsWith('http')) {
+                    gallery.innerHTML += `
+                        <a href="${book.link}" target="_blank" class="book-card">
+                            ${badgeHtml}
+                            <img src="${book.img}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'">
+                            ${callNoHtml}
+                            <div class="title">${book.title}</div>
+                            <div class="info">${book.author} | ${book.pub}</div>
+                            <div class="description">${book.desc}</div>
+                        </a>`;
                 }
             });
         }
@@ -368,12 +383,70 @@
                 if (cat === '전체') btn.classList.add('active');
                 btn.innerText = cat;
                 btn.onclick = () => {
+                    document.getElementById('searchInput').value = ''; 
+                    currentCategory = cat; 
                     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     renderBooks(cat);
                 };
                 btnContainer.appendChild(btn);
             });
+        }
+
+        let rouletteInterval;
+        function openRandomModal() {
+            if (allBooks.length === 0) return;
+            const modal = document.getElementById('randomModal');
+            const imgEl = document.getElementById('modal-img');
+            const headEl = document.getElementById('modal-head-text');
+            const titleEl = document.getElementById('modal-title');
+            const authorEl = document.getElementById('modal-author');
+            const linkEl = document.getElementById('modal-link');
+
+            modal.style.display = 'block';
+            imgEl.classList.add('slot-spin');
+            imgEl.classList.remove('pop-anim'); 
+            linkEl.style.display = 'none';
+            headEl.innerText = " 두구두구... ";
+            titleEl.innerText = "운명의 책을 찾고 있습니다...";
+            authorEl.innerText = "잠시만 기다려주세요!";
+
+            rouletteInterval = setInterval(() => {
+                const randomTemp = allBooks[Math.floor(Math.random() * allBooks.length)];
+                imgEl.src = randomTemp.img;
+            }, 50); 
+
+            setTimeout(() => {
+                clearInterval(rouletteInterval);
+                const finalBook = allBooks[Math.floor(Math.random() * allBooks.length)];
+                imgEl.classList.remove('slot-spin');   
+                imgEl.src = finalBook.img;
+                headEl.innerText = "🎉 오늘의 행운 도서! 🎉";
+                titleEl.innerText = finalBook.title;
+                authorEl.innerText = finalBook.author + ' | ' + finalBook.pub;
+                linkEl.href = finalBook.link;
+                linkEl.style.display = 'inline-block';
+                void imgEl.offsetWidth; 
+                imgEl.classList.add('pop-anim');
+
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    zIndex: 2000
+                });
+
+            }, 2500);
+        }
+
+        function closeRandomModal() {
+            document.getElementById('randomModal').style.display = 'none';
+            clearInterval(rouletteInterval);
+            document.getElementById('modal-img').classList.remove('slot-spin');
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('randomModal')) closeRandomModal();
         }
 
         loadBooks();
