@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>교직원 신착도서</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root { --primary: #2c3e50; --bg: #fdfaf5; --accent: #e67e22; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); padding: 40px 20px; color: #333; margin: 0; }
@@ -81,16 +82,7 @@
             border: 4px solid white;
         }
         
-        /* 룰렛 번쩍임 효과 */
-        .modal-content.spinning { animation: rainbowBorder 0.5s linear infinite; }
-        @keyframes rainbowBorder {
-            0% { border-color: #ff0000; box-shadow: 0 0 20px #ff0000; }
-            20% { border-color: #ffff00; box-shadow: 0 0 20px #ffff00; }
-            40% { border-color: #00ff00; box-shadow: 0 0 20px #00ff00; }
-            60% { border-color: #00ffff; box-shadow: 0 0 20px #00ffff; }
-            80% { border-color: #0000ff; box-shadow: 0 0 20px #0000ff; }
-            100% { border-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
-        }
+        /* ★ 테두리 번쩍임 효과 제거됨 ★ */
 
         .close-btn { position: absolute; top: 15px; right: 20px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; transition: 0.2s; z-index: 20; }
         .close-btn:hover { color: black; }
@@ -141,7 +133,7 @@
 
     <div class="controls-container">
         <button class="random-btn" onclick="openRandomModal()">
-            🍀 오늘의 운세: 책 추천받기
+            🎰 오늘의 운세: 책 추천받기
         </button>
         <br>
         <div id="filter-buttons" class="filter-container"></div>
@@ -166,7 +158,7 @@
 
     <script>
         // ▼▼▼ 여기에 본인의 구글 시트 주소를 넣으세요 ▼▼▼
-        const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvgpFiJL5vGTUdZk3u_cnRyXeZ-Ej5u_FC3HihBMHtHs17ZBSObgQe6aWDH3UFIHpu0oKy1TYhcKPP/pub?gid=0&single=true&output=csv"; 
+        const sheetCsvUrl = "여기에_주소를_복사해서_넣으세요"; 
         // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
         window.addEventListener('error', function(e) {
@@ -176,20 +168,10 @@
         });
 
         let allBooks = []; 
-        
-        // ★ 수정된 색상 코드 적용 ★
         const categoryColors = {
-            '총류': '#27ae60',     // Green
-            '철학': '#FF0000',     // Red (변경됨)
-            '종교': '#7f8c8d',     // Grey
-            '사회과학': '#FFA500', // Orange (변경됨)
-            '자연과학': '#795548', // Brown
-            '기술과학': '#00a8ff', // Light Blue
-            '예술': '#f1c40f',     // Yellow
-            '언어': '#badc58',     // Light Green
-            '문학': '#120A8F',     // Dark Blue (변경됨)
-            '역사': '#8e44ad',     // Purple
-            '기타': '#bdc3c7'      // Light Grey
+            '총류': '#27ae60', '철학': '#FF0000', '종교': '#7f8c8d',
+            '사회과학': '#FFA500', '자연과학': '#795548', '기술과학': '#00a8ff',
+            '예술': '#f1c40f', '언어': '#badc58', '문학': '#120A8F', '역사': '#8e44ad', '기타': '#bdc3c7'
         };
 
         function parseCSV(text) {
@@ -299,12 +281,12 @@
             const linkEl = document.getElementById('modal-link');
 
             modal.style.display = 'block';
-            modalBox.classList.add('spinning'); 
+            // modalBox.classList.add('spinning'); // ★ 테두리 반짝임 제거 ★
             imgEl.classList.add('slot-spin');
             imgEl.classList.remove('pop-anim'); 
             
             linkEl.style.display = 'none';
-            headEl.innerText = "두구두구...";
+            headEl.innerText = "🎰 두구두구... 🎰";
             titleEl.innerText = "운명의 책을 찾고 있습니다...";
             authorEl.innerText = "잠시만 기다려주세요!";
 
@@ -316,7 +298,7 @@
             setTimeout(() => {
                 clearInterval(rouletteInterval);
                 const finalBook = allBooks[Math.floor(Math.random() * allBooks.length)];
-                modalBox.classList.remove('spinning'); 
+                // modalBox.classList.remove('spinning'); // ★ 테두리 반짝임 제거 ★
                 imgEl.classList.remove('slot-spin');   
                 imgEl.src = finalBook.img;
                 headEl.innerText = "🎉 오늘의 행운 도서! 🎉";
@@ -326,13 +308,22 @@
                 linkEl.style.display = 'inline-block';
                 void imgEl.offsetWidth; 
                 imgEl.classList.add('pop-anim');
+
+                // ★ 꽃가루 효과 발사! ★
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    zIndex: 2000 // 모달 위로 오게 설정
+                });
+
             }, 2500);
         }
 
         function closeRandomModal() {
             document.getElementById('randomModal').style.display = 'none';
             clearInterval(rouletteInterval);
-            document.getElementById('modal-box').classList.remove('spinning');
+            // document.getElementById('modal-box').classList.remove('spinning'); // 제거됨
             document.getElementById('modal-img').classList.remove('slot-spin');
         }
 
