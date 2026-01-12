@@ -1,198 +1,81 @@
-<script>
-        // ▼▼▼ 여기에 본인의 '웹에 게시'된 CSV 주소를 정확히 넣어주세요 ▼▼▼
-        const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvgpFiJL5vGTUdZk3u_cnRyXeZ-Ej5u_FC3HihBMHtHs17ZBSObgQe6aWDH3UFIHpu0oKy1TYhcKPP/pub?gid=0&single=true&output=csv"; 
-        // 주의: 끝이 /edit 가 아니라 /pub?output=csv 여야 합니다!
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>교직원 신착도서</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+    <style>
+        :root { --primary: #2c3e50; --bg: #fdfaf5; --accent: #e67e22; }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); padding: 40px 20px; color: #333; margin: 0; }
+        
+        h1 { text-align: center; margin-bottom: 20px; font-weight: 800; color: var(--primary); letter-spacing: -1px; }
 
-        // --- 여기서부터는 건드리지 마세요 ---
-        let allBooks = []; 
-        const categoryColors = {
-            '총류': '#27ae60', '철학': '#c0392b', '종교': '#7f8c8d',
-            '사회과학': '#e67e22', '자연과학': '#795548', '기술과학': '#00a8ff',
-            '예술': '#f1c40f', '언어': '#badc58', '문학': '#192a56', '역사': '#8e44ad', '기타': '#bdc3c7'
-        };
+        /* 대시보드 스타일 */
+        .dashboard-container {
+            max-width: 800px; margin: 0 auto 30px; background: white; 
+            padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            text-align: center; border: 1px solid #f0f0f0; display: none; /* 로딩 전엔 숨김 */
+        }
+        .dashboard-title { font-size: 0.95rem; color: #666; margin-bottom: 15px; font-weight: 600; }
+        .dashboard-title strong { color: var(--primary); font-size: 1.2rem; }
 
-        function debugLog(msg, isError = false) {
-            const statusDiv = document.getElementById('status');
-            if (isError) {
-                statusDiv.innerHTML = `<div style="color:red; font-weight:bold; background:#fff0f0; padding:20px; border-radius:10px; border:2px solid red;">
-                    🚨 오류 발생!<br>${msg}
-                    </div>`;
-                console.error(msg);
-            } else {
-                statusDiv.innerText = msg;
-                console.log(msg);
-            }
+        .dna-bar-wrapper {
+            width: 100%; height: 24px; background: #f0f0f0; border-radius: 12px; 
+            overflow: hidden; display: flex; margin-bottom: 15px;
+        }
+        .dna-segment {
+            height: 100%; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+        }
+        .dna-segment:hover { opacity: 0.9; }
+        .dna-segment:hover::after {
+            content: attr(data-label); position: absolute; top: -35px; left: 50%; 
+            transform: translateX(-50%); background: #333; color: white; 
+            padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap;
+            pointer-events: none; z-index: 100;
+        }
+        .stat-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; font-size: 0.85rem; color: #555; }
+        .stat-item { display: flex; align-items: center; gap: 5px; }
+        .stat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+        /* 컨트롤 패널 */
+        .controls-container { text-align: center; margin-bottom: 40px; }
+        .random-btn {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; border: none;
+            padding: 10px 24px; border-radius: 30px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); transition: 0.3s;
+            display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 1rem;
+        }
+        .random-btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 8px 20px rgba(108, 92, 231, 0.4); }
+
+        .filter-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+        .filter-btn {
+            background: white; border: 1px solid #ddd; padding: 8px 16px; 
+            border-radius: 20px; cursor: pointer; font-weight: 600; color: #555;
+            transition: all 0.2s; font-size: 0.9rem;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--primary); color: white; border-color: var(--primary);
         }
 
-        function parseCSV(text) {
-            const rows = []; let row = []; let col = ''; let inQuotes = false;
-            for (let i = 0; i < text.length; i++) {
-                let char = text[i]; let next = text[i+1];
-                if (char === '"' && inQuotes && next === '"') { col += '"'; i++; }
-                else if (char === '"') { inQuotes = !inQuotes; }
-                else if (char === ',' && !inQuotes) { row.push(col); col = ''; }
-                else if (char === '\n' && !inQuotes) { row.push(col); rows.push(row); row = []; col = ''; }
-                else if (char !== '\r') { col += char; }
-            }
-            if (col || row.length > 0) { row.push(col); rows.push(row); }
-            return rows;
+        /* 갤러리 스타일 */
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+        .book-card { 
+            background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); 
+            overflow: hidden; transition: 0.4s; text-decoration: none; color: inherit; 
+            display: flex; flex-direction: column; padding: 25px; border: 1px solid #f0f0f0; 
+            position: relative; height: 100%; box-sizing: border-box;
         }
-
-        function getCategoryFromCallNo(callNo) {
-            if (!callNo) return '기타';
-            const match = callNo.match(/(\d{3})/);
-            if (!match) return '기타';
-            const num = match[1]; 
-            const hundreds = num.charAt(0);
-            const map = { '0': '총류', '1': '철학', '2': '종교', '3': '사회과학', '4': '자연과학', '5': '기술과학', '6': '예술', '7': '언어', '8': '문학', '9': '역사' };
-            return map[hundreds] || '기타';
+        .book-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
+        .call-number {
+            font-size: 0.8rem; color: var(--accent); font-weight: 700; margin-bottom: 5px;
+            display: inline-block; background: #fff5e6; padding: 2px 8px; border-radius: 4px;
         }
-
-        async function loadBooks() {
-            try {
-                debugLog("1. 구글 시트 연결 시도 중...");
-                
-                if (sheetCsvUrl.includes("YOUR_GOOGLE_SHEET")) {
-                    throw new Error("코드 상단의 sheetCsvUrl에 주소를 입력하지 않았습니다.");
-                }
-                if (sheetCsvUrl.includes("/edit")) {
-                    throw new Error("입력하신 주소는 '편집용 주소'입니다. '웹에 게시' > 'CSV' 주소를 넣어주세요.");
-                }
-
-                const response = await fetch(sheetCsvUrl + "&t=" + new Date().getTime());
-                
-                if (!response.ok) {
-                    throw new Error(`네트워크 오류 (상태코드: ${response.status})`);
-                }
-
-                const csvText = await response.text();
-                
-                // HTML 에러 페이지가 왔는지 확인
-                if (csvText.trim().startsWith("<!DOCTYPE") || csvText.includes("<html")) {
-                    throw new Error("CSV 데이터가 아니라 HTML 페이지가 로드되었습니다. '웹에 게시' 링크가 맞는지 다시 확인해주세요.");
-                }
-
-                debugLog("2. 데이터 분석 및 분류 중...");
-                const data = parseCSV(csvText);
-
-                if (data.length < 2) {
-                    throw new Error("데이터가 비어있습니다. 구글 시트 A열(ISBN)과 B열(제목)에 내용이 있는지 확인하세요.");
-                }
-
-                allBooks = [];
-                for (let i = 1; i < data.length; i++) {
-                    const cols = data[i];
-                    // 데이터 열 개수가 부족해도 안전하게 처리
-                    if (cols.length > 1) { 
-                        // undefined 방지를 위한 안전 장치
-                        const getCol = (idx) => cols[idx] ? cols[idx].trim() : '';
-                        
-                        const callNo = getCol(8); 
-                        const autoCategory = getCategoryFromCallNo(callNo);
-                        
-                        allBooks.push({
-                            title: getCol(1),
-                            author: getCol(2),
-                            pub: getCol(3),
-                            desc: getCol(4),
-                            img: getCol(5),
-                            link: getCol(6),
-                            badge: getCol(7),
-                            callNo: callNo,
-                            category: autoCategory
-                        });
-                    }
-                }
-
-                debugLog("3. 화면 그리기 중...");
-                allBooks.sort((a, b) => a.callNo.localeCompare(b.callNo));
-
-                renderDashboard();
-                createFilterButtons();
-                renderBooks('전체');
-
-                // 성공 시
-                document.getElementById('status').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block'; 
-
-            } catch (e) {
-                debugLog(e.message, true);
-            }
+        .badge {
+            position: absolute; top: 20px; right: 20px; padding: 6px 14px; 
+            border-radius: 30px; font-size: 0.75rem; font-weight: 800; color: white; 
+            z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-
-        // --- 렌더링 함수들 (이전과 동일) ---
-        function renderDashboard() {
-            const total = allBooks.length;
-            document.getElementById('total-count').innerText = total;
-            const stats = {};
-            allBooks.forEach(book => { stats[book.category] = (stats[book.category] || 0) + 1; });
-            const order = ['총류', '철학', '종교', '사회과학', '자연과학', '기술과학', '예술', '언어', '문학', '역사', '기타'];
-            const barContainer = document.getElementById('dna-bar');
-            const legendContainer = document.getElementById('stat-legend');
-            barContainer.innerHTML = ''; legendContainer.innerHTML = '';
-            order.forEach(cat => {
-                const count = stats[cat];
-                if (count > 0) {
-                    const percentage = (count / total) * 100;
-                    const color = categoryColors[cat] || '#ccc';
-                    const segment = document.createElement('div');
-                    segment.className = 'dna-segment';
-                    segment.style.width = '0%'; 
-                    segment.style.backgroundColor = color;
-                    segment.setAttribute('data-label', `${cat}: ${count}권 (${percentage.toFixed(1)}%)`);
-                    setTimeout(() => { segment.style.width = `${percentage}%`; }, 100);
-                    barContainer.appendChild(segment);
-                    legendContainer.innerHTML += `<div class="stat-item"><span class="stat-dot" style="background:${color}"></span>${cat} ${count}</div>`;
-                }
-            });
-        }
-        function openRandomModal() {
-            if (allBooks.length === 0) return;
-            const randomIndex = Math.floor(Math.random() * allBooks.length);
-            const randomBook = allBooks[randomIndex];
-            document.getElementById('modal-img').src = randomBook.img;
-            document.getElementById('modal-title').innerText = randomBook.title;
-            document.getElementById('modal-author').innerText = randomBook.author + ' | ' + randomBook.pub;
-            document.getElementById('modal-link').href = randomBook.link;
-            document.getElementById('randomModal').style.display = 'block';
-        }
-        function closeRandomModal() { document.getElementById('randomModal').style.display = 'none'; }
-        window.onclick = function(event) { if (event.target == document.getElementById('randomModal')) closeRandomModal(); }
-        function renderBooks(filterCategory) {
-            const gallery = document.getElementById('book-gallery');
-            gallery.innerHTML = ''; 
-            allBooks.forEach(book => {
-                if (filterCategory === '전체' || book.category === filterCategory) {
-                    let badgeHtml = '';
-                    if (book.badge === '신규') badgeHtml = '<div class="badge badge-new">NEW</div>';
-                    else if (book.badge === '추천') badgeHtml = '<div class="badge badge-pick">PICK</div>';
-                    else if (book.badge === '인기') badgeHtml = '<div class="badge badge-hot">HOT</div>';
-                    let callNoHtml = book.callNo ? `<div class="call-number">${book.callNo}</div>` : '';
-                    if (book.img.startsWith('http')) {
-                        gallery.innerHTML += `<a href="${book.link}" target="_blank" class="book-card">${badgeHtml}<img src="${book.img}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'">${callNoHtml}<div class="title">${book.title}</div><div class="info">${book.author} | ${book.pub}</div><div class="description">${book.desc}</div></a>`;
-                    }
-                }
-            });
-        }
-        function createFilterButtons() {
-            const order = ['전체', '총류', '철학', '종교', '사회과학', '자연과학', '기술과학', '예술', '언어', '문학', '역사', '기타'];
-            const existCats = [...new Set(allBooks.map(b => b.category))];
-            const finalCats = order.filter(c => c === '전체' || existCats.includes(c));
-            const btnContainer = document.getElementById('filter-buttons');
-            btnContainer.innerHTML = '';
-            finalCats.forEach(cat => {
-                const btn = document.createElement('button');
-                btn.className = 'filter-btn';
-                if (cat === '전체') btn.classList.add('active');
-                btn.innerText = cat;
-                btn.onclick = () => {
-                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    renderBooks(cat);
-                };
-                btnContainer.appendChild(btn);
-            });
-        }
-
-        loadBooks();
-    </script>
+        .badge-신규 { background: #2c3e50; }
+        .badge-추천
