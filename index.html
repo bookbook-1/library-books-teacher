@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>교직원 신착도서 </title>
+    <title>교직원 신착도서</title>
     <style>
         :root { --primary-color: #2c3e50; --bg-color: #fdfaf5; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color); padding: 40px 20px; color: #333; margin: 0; }
@@ -43,8 +43,8 @@
     <div id="book-gallery" class="gallery"></div>
 
     <script>
-        // G열까지 데이터를 가져오도록 범위 수정 (A:G)
-        const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvgpFiJL5vGTUdZk3u_cnRyXeZ-Ej5u_FC3HihBMHtHs17ZBSObgQe6aWDH3UFIHpu0oKy1TYhcKPP/pub?gid=0&single=true&output=csv&range=A:G";
+        // ★수정됨: H열(배지)까지 가져오기 위해 범위를 A:H로 변경
+        const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvgpFiJL5vGTUdZk3u_cnRyXeZ-Ej5u_FC3HihBMHtHs17ZBSObgQe6aWDH3UFIHpu0oKy1TYhcKPP/pub?gid=0&single=true&output=csv&range=A:H";
 
         function parseCSV(text) {
             const rows = []; let row = []; let col = ''; let inQuotes = false;
@@ -70,15 +70,18 @@
 
                 for (let i = 1; i < data.length; i++) {
                     const cols = data[i];
-                    if (cols.length >= 5) {
-                        const title = cols[0].trim();
-                        const author = cols[1] || '';
-                        const pub = cols[2] || '';
-                        const desc = cols[3] || '';
-                        const img = cols[4] ? cols[4].trim() : '';
-                        const link = cols[5] ? cols[5].trim() : '#';
-                        // G열은 인덱스 번호로 6번입니다.
-                        const badgeText = cols[6] ? cols[6].trim() : ''; 
+                    // ★수정됨: 데이터 열 개수 체크 (A~H열이므로 최소 6개 이상)
+                    if (cols.length >= 6) {
+                        
+                        // ★수정됨: ISBN(A열)이 생기면서 인덱스가 하나씩 밀렸습니다.
+                        // cols[0] = ISBN (화면 표시 안함)
+                        const title = cols[1].trim();     // B열
+                        const author = cols[2] || '';     // C열
+                        const pub = cols[3] || '';        // D열
+                        const desc = cols[4] || '';       // E열
+                        const img = cols[5] ? cols[5].trim() : ''; // F열
+                        const link = cols[6] ? cols[6].trim() : '#'; // G열
+                        const badgeText = cols[7] ? cols[7].trim() : ''; // H열 (배지)
 
                         let badgeHtml = '';
                         if (badgeText === '신규') badgeHtml = '<div class="badge badge-new">NEW</div>';
