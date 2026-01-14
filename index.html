@@ -112,6 +112,14 @@
             background: #f0f0f0; box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
         }
         .modal-img { width: 100%; height: 100%; object-fit: contain; position: relative; top: 0; }
+        
+        /* ★ 모달 안 청구기호 스타일 추가 */
+        #modal-callno {
+            display: inline-block; background: #fff5e6; color: #e67e22; 
+            padding: 6px 14px; border-radius: 20px; font-weight: 700; 
+            font-size: 0.95rem; margin-bottom: 12px;
+        }
+
         .slot-spin { animation: slotBlur 0.1s linear infinite; filter: blur(8px); transform: scale(0.9); }
         @keyframes slotBlur {
             0% { transform: translateY(-50%) scale(0.9); opacity: 0.5; }
@@ -142,7 +150,7 @@
 
         <div id="dashboard" class="dashboard-container">
             <div class="dashboard-title">
-                 총 <strong id="total-count">0</strong>권의 신착도서가 입고되었습니다.
+               총 <strong id="total-count">0</strong>권의 신착도서가 입고되었습니다.
             </div>
             <div id="dna-bar" class="dna-bar-wrapper"></div>
             <div id="stat-legend" class="stat-legend"></div>
@@ -169,6 +177,9 @@
             <div class="slot-window">
                 <img id="modal-img" class="modal-img" src="" alt="랜덤 책">
             </div>
+            
+            <div id="modal-callno" style="display:none;"></div>
+
             <h2 id="modal-title" style="font-size:1.2rem; margin-bottom:10px;"></h2>
             <p id="modal-author" style="color:#666; margin-bottom:20px;"></p>
             <a id="modal-link" href="#" target="_blank" class="random-btn" style="text-decoration:none; font-size:0.9rem;">
@@ -178,6 +189,7 @@
     </div>
 
     <script>
+        // 교직원용 시트 주소 (그대로 유지)
         const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvgpFiJL5vGTUdZk3u_cnRyXeZ-Ej5u_FC3HihBMHtHs17ZBSObgQe6aWDH3UFIHpu0oKy1TYhcKPP/pub?gid=0&single=true&output=csv"; 
 
         window.addEventListener('error', function(e) {
@@ -229,7 +241,6 @@
 
                 const data = parseCSV(csvText);
 
-                // 공지사항 (J2)
                 const noticeBar = document.getElementById('notice-bar');
                 const noticeText = document.getElementById('notice-text');
                 let showNotice = false;
@@ -246,11 +257,11 @@
                 for (let i = 1; i < data.length; i++) {
                     const cols = data[i];
                     if (cols.length >= 6) {
-                        // ★ [수정] 제목(B열, cols[1])이 비어있으면 건너뛰기!
                         if (!cols[1] || cols[1].trim() === "") continue;
 
                         const callNo = cols[8] ? cols[8].trim() : ''; 
                         const autoCategory = getCategoryFromCallNo(callNo);
+                        
                         allBooks.push({
                             title: cols[1].trim(),
                             author: cols[2] || '',
@@ -394,13 +405,18 @@
             const titleEl = document.getElementById('modal-title');
             const authorEl = document.getElementById('modal-author');
             const linkEl = document.getElementById('modal-link');
+            // ★ 청구기호 엘리먼트 가져오기
+            const callNoEl = document.getElementById('modal-callno');
 
             modal.style.display = 'block';
             imgEl.classList.add('slot-spin');
             imgEl.classList.remove('pop-anim'); 
             linkEl.style.display = 'none';
+            // 돌릴 때는 청구기호 숨김
+            callNoEl.style.display = 'none'; 
+            
             headEl.innerText = " 두구두구... ";
-            titleEl.innerText = "오늘의 책을 찾고 있습니다...";
+            titleEl.innerText = "운명의 책을 찾고 있습니다...";
             authorEl.innerText = "잠시만 기다려주세요!";
 
             rouletteInterval = setInterval(() => {
@@ -413,9 +429,19 @@
                 const finalBook = allBooks[Math.floor(Math.random() * allBooks.length)];
                 imgEl.classList.remove('slot-spin');   
                 imgEl.src = finalBook.img;
+                
                 headEl.innerText = "🎉 오늘의 행운 도서! 🎉";
                 titleEl.innerText = finalBook.title;
                 authorEl.innerText = finalBook.author + ' | ' + finalBook.pub;
+                
+                // ★ 청구기호 표시 로직 추가
+                if (finalBook.callNo) {
+                    callNoEl.innerText = finalBook.callNo;
+                    callNoEl.style.display = 'inline-block';
+                } else {
+                    callNoEl.style.display = 'none';
+                }
+
                 linkEl.href = finalBook.link;
                 linkEl.style.display = 'inline-block';
                 void imgEl.offsetWidth; 
